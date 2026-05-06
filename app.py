@@ -26,10 +26,12 @@ def levenshtein(a, b):
 
 def token_sim(a, b):
     a, b = a.upper(), b.upper()
-    if a == b: return "exact"
+    if a == b:
+        return "exact"
     max_l = max(len(a), len(b))
     len_diff = abs(len(a) - len(b))
-    if len_diff > 3: return "none"
+    if len_diff > 3:
+        return "none"
     dist = levenshtein(a, b)
     ratio = dist / max_l if max_l > 0 else 0
     if max_l >= 6:
@@ -69,7 +71,8 @@ def get_name_token_results(i_name, m_name):
 
 
 def masked_visible_digits_match(i_clean, m_clean):
-    if len(i_clean) < 10 or len(m_clean) < 10: return False
+    if len(i_clean) < 10 or len(m_clean) < 10:
+        return False
     offset = len(i_clean) - len(m_clean)
     visible_count = 0
     for k in range(len(m_clean)):
@@ -119,46 +122,30 @@ def compare_name_phone_single(master_names, input_name, master_phones, input_pho
                      and masked_visible_digits_match(i_clean, m_clean))
         addon = 0
         rule = ""
-        i_token_count = len([t for t in normalize(input_name).split() if len(t) > 1])
-
         if perfect_count >= 2:
-            # >= 2 tokens matching perfectly → addon 100, final 130 → capped 100
-            addon = 100; rule = "≥2 tokens perfectly"
-
+            addon = 100
+            rule = "at least 2 tokens perfectly"
         elif masked_ok and perfect_count >= 1:
-            # Phone visible digits + >=1 token perfectly → addon 100, final 130 → capped 100
-            addon = 100; rule = "Phone visible digits + ≥1 token perfectly"
-
-        elif masked_ok and fuzzy_count >= 2:
-            # Phone visible digits + >=2 tokens fuzzy → addon 60, final 90
-            addon = 60; rule = "Phone visible digits + ≥2 tokens fuzzy"
-
+            addon = 100
+            rule = "Phone visible digits + ≥1 token perfectly"
         elif masked_ok and fuzzy_count >= 1:
-            # Phone visible digits + >=1 token fuzzy → addon 50, final 80
-            addon = 50; rule = "Phone visible digits + ≥1 token fuzzy"
-
+            addon = 50
+            rule = "Phone visible digits + ≥1 token fuzzy"
         elif perfect_count >= 1 and fuzzy_count >= 1:
-            # >=1 token perfectly + >=1 token fuzzy → addon 50, final 80
-            addon = 50; rule = "≥1 token perfectly + ≥1 token fuzzy"
-
+            addon = 50
+            rule = "≥1 token perfectly + ≥1 token fuzzy"
         elif fuzzy_count >= 2:
-            # >=2 tokens fuzzy → addon 40, final 70
-            addon = 40; rule = "≥2 tokens fuzzy"
-
-        elif perfect_count >= 1 and i_token_count == 1:
-            # >=1 token perfectly, BUT user input has only 1 token → addon 40, final 70
-            addon = 40; rule = "≥1 token perfectly (single token input)"
-
-        elif perfect_count >= 1 and i_token_count > 1:
-            # >=1 token perfectly, user input has >1 tokens → weaker signal → addon 20, final 50
-            addon = 20; rule = "≥1 token perfectly (multi-token input)"
-
+            addon = 40
+            rule = "at least 2 tokens fuzzily"
+        elif perfect_count >= 1:
+            addon = 40
+            rule = "Only ≥1 token perfectly"
         elif fuzzy_count >= 1:
-            # >=1 token fuzzy only → addon 20, final 50
-            addon = 20; rule = "≥1 token fuzzy"
-
+            addon = 30
+            rule = "Only ≥1 token fuzzy"
         else:
-            addon = 0; rule = "No name match"
+            addon = 0
+            rule = "No name match"
         final_score = stage1 + addon
         show_score = min(100, final_score)
         if show_score > best_show:
@@ -204,32 +191,27 @@ def validate_user_file(df):
 # MAIN PROCESSING FUNCTIONS
 # ══════════════════════════════════════════════════════════════════════
 
-def process_user_to_master(user_df, master_df, progress_bar=None, status_text=None):
+def process_user_to_master(user_df, master_df, progress_bar, progress_text, start_pct, end_pct):
     """
-    Match User file against Master file.
-    Only processes rows where IS_PROVISIONAL == True.
+    Match ONLY Is_Provisional == True rows from User file against Master file.
+    Returns (provisional_results_df, full_user_df_with_scores)
     """
     master_names = master_df['TEACHER_NAME'].values
     master_phones = master_df['MOBILE_NO'].values
     master_udises = master_df['UDISE'].values
 
-    # Filter to only IS_PROVISIONAL == True rows
-    prov_col = None
-    for col in user_df.columns:
-        if col.upper() == 'IS_PROVISIONAL':
-            prov_col = col
-            break
-
-    if prov_col:
-        provisional_df = user_df[user_df[prov_col].astype(str).str.strip().str.upper() == 'TRUE'].copy()
+    # Filter: only Is_Provisional == True rows
+    if 'IS_PROVISIONAL' in user_df.columns:
+        prov_mask = user_df['IS_PROVISIONAL'].astype(str).str.strip().str.upper() == 'TRUE'
+        prov_df = user_df[prov_mask].copy()
     else:
-        provisional_df = user_df.copy()
+        prov_df = user_df.copy()
 
     results = []
-    total = len(provisional_df)
+    total = len(prov_df)
     start_time = time.time()
 
-    for i, (idx, row) in enumerate(provisional_df.iterrows()):
+    for i, (idx, row) in enumerate(prov_df.iterrows()):
         input_name = row['FULL_NAME']
         input_phone = row['MOBILE_NUMBER']
         input_udise = row['UDISE_CODE']
@@ -250,37 +232,22 @@ def process_user_to_master(user_df, master_df, progress_bar=None, status_text=No
             'Details': details
         })
 
-        if progress_bar is not None and total > 0:
-            pct = (i + 1) / total
+        # Update progress
+        if total > 0:
+            frac = (i + 1) / total
+            pct = start_pct + frac * (end_pct - start_pct)
+            progress_bar.progress(int(pct))
             elapsed = time.time() - start_time
-            if pct > 0:
-                eta = (elapsed / pct) * (1 - pct)
-                eta_str = f"{int(eta)}s remaining" if eta < 60 else f"{int(eta/60)}m {int(eta%60)}s remaining"
-            else:
-                eta_str = "calculating..."
-            progress_bar.progress(pct)
-            if status_text:
-                status_text.markdown(
-                    f"<div style='font-size:13px;color:#aaa;'>Step 1/2 — Row {i+1}/{total} &nbsp;|&nbsp; ⏱ {eta_str}</div>",
-                    unsafe_allow_html=True
-                )
+            remaining = (elapsed / (i + 1)) * (total - i - 1) if i > 0 else 0
+            progress_text.text(f"Step 1/2: Matching User → Master  |  {i+1}/{total} rows  |  ⏱ ~{int(remaining)}s remaining")
 
-    if not results:
-        # Return empty df with right columns
-        result_df = provisional_df.copy()
-        for key in ['Score', 'Matched_Name', 'Matched_Phone', 'Matched_UDISE', 'Rule', 'Details']:
-            result_df[key] = []
-        return result_df
+    for key in results[0].keys() if results else []:
+        prov_df[key] = [r[key] for r in results]
 
-    result_df = provisional_df.copy()
-    for key in results[0].keys():
-        result_df[key] = [r[key] for r in results]
-
-    return result_df
+    return prov_df
 
 
-def process_master_to_user(master_df, user_df, progress_bar=None, status_text=None):
-    """Match Master file against User file (reverse direction)"""
+def process_master_to_user(master_df, user_df, progress_bar, progress_text, start_pct, end_pct):
     user_names = user_df['FULL_NAME'].values
     user_phones = user_df['MOBILE_NUMBER'].values
     user_udises = user_df['UDISE_CODE'].values
@@ -310,23 +277,16 @@ def process_master_to_user(master_df, user_df, progress_bar=None, status_text=No
             'Details': details
         })
 
-        if progress_bar is not None and total > 0:
-            pct = (i + 1) / total
+        if total > 0:
+            frac = (i + 1) / total
+            pct = start_pct + frac * (end_pct - start_pct)
+            progress_bar.progress(int(pct))
             elapsed = time.time() - start_time
-            if pct > 0:
-                eta = (elapsed / pct) * (1 - pct)
-                eta_str = f"{int(eta)}s remaining" if eta < 60 else f"{int(eta/60)}m {int(eta%60)}s remaining"
-            else:
-                eta_str = "calculating..."
-            progress_bar.progress(pct)
-            if status_text:
-                status_text.markdown(
-                    f"<div style='font-size:13px;color:#aaa;'>Step 2/2 — Row {i+1}/{total} &nbsp;|&nbsp; ⏱ {eta_str}</div>",
-                    unsafe_allow_html=True
-                )
+            remaining = (elapsed / (i + 1)) * (total - i - 1) if i > 0 else 0
+            progress_text.text(f"Step 2/2: Matching Master → User  |  {i+1}/{total} rows  |  ⏱ ~{int(remaining)}s remaining")
 
     result_df = master_df.copy()
-    for key in results[0].keys():
+    for key in results[0].keys() if results else []:
         result_df[key] = [r[key] for r in results]
 
     return result_df
@@ -337,33 +297,33 @@ def create_excel_download(df, sheet_name="Sheet1"):
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name=sheet_name, index=False)
     output.seek(0)
-    return output.read()
+    return output.getvalue()
 
 
 def create_sample_master():
-    data = {
-        'UDISE': ['27150100101', '27150100102', '27150100103'],
-        'TEACHER_NAME': ['RAJESH KUMAR SHARMA', 'PRIYA MEHTA', 'SURESH PATIL'],
-        'MOBILE_NO': ['XXXXXX7890', '9876XXXX12', '9123456789']
-    }
-    return create_excel_download(pd.DataFrame(data), "Master_Sample")
+    df = pd.DataFrame({
+        'UDISE': ['27110100101', '27110100102', '27110100103'],
+        'TEACHER_NAME': ['RAMESH KUMAR SHARMA', 'SUNITA DEVI', 'MOHAN LAL GUPTA'],
+        'MOBILE_NO': ['98XXXXXX01', '87XXXXXX12', '9876543210']
+    })
+    return create_excel_download(df, "Master_Sample")
 
 
 def create_sample_user():
-    data = {
-        'COMMUNITY_USER_ID': ['U001', 'U002', 'U003'],
-        'FULL_NAME': ['Rajesh Kumar Sharma', 'Priya Mehta', 'New Teacher'],
-        'MOBILE_NUMBER': ['9999987890', '9876543212', '8888888888'],
-        'EMAIL': ['r@example.com', 'p@example.com', 'n@example.com'],
-        'SCHOOL_NAME': ['ABC School', 'DEF School', 'GHI School'],
-        'UDISE_CODE': ['27150100101', '27150100102', '27150100999'],
+    df = pd.DataFrame({
+        'COMMUNITY_USER_ID': ['USR001', 'USR002', 'USR003'],
+        'FULL_NAME': ['RAMESH KUMAR SHARMA', 'SUNITA DEVI', 'MOHAN LAL GUPTA'],
+        'MOBILE_NUMBER': ['9812345601', '8712345612', '9876543210'],
+        'EMAIL': ['ramesh@example.com', 'sunita@example.com', 'mohan@example.com'],
+        'SCHOOL_NAME': ['GOVT PRIMARY SCHOOL A', 'GOVT PRIMARY SCHOOL B', 'GOVT PRIMARY SCHOOL C'],
+        'UDISE_CODE': ['27110100101', '27110100102', '27110100103'],
         'COMMUNITY_NAME': ['Community A', 'Community B', 'Community C'],
         'CIRCLE_NAME': ['Circle 1', 'Circle 1', 'Circle 2'],
-        'BLOCK_NAME': ['Block A', 'Block A', 'Block B'],
-        'DISTRICT_NAME': ['Pune', 'Pune', 'Mumbai'],
-        'IS_PROVISIONAL': ['True', 'True', 'False']
-    }
-    return create_excel_download(pd.DataFrame(data), "User_Sample")
+        'BLOCK_NAME': ['Block X', 'Block X', 'Block Y'],
+        'DISTRICT_NAME': ['District 1', 'District 1', 'District 2'],
+        'IS_PROVISIONAL': ['True', 'False', 'True']
+    })
+    return create_excel_download(df, "User_Sample")
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -377,50 +337,24 @@ def main():
         layout="wide"
     )
 
-    # Custom CSS
-    st.markdown("""
-    <style>
-    .stProgress > div > div > div > div {
-        background: linear-gradient(90deg, #e74c3c, #f39c12);
-    }
-    .reset-note {
-        font-size: 12px;
-        color: #888;
-        margin-top: 4px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    # ── Session State Init ──
+    for key in ['processing_done', 'auto_verify', 'not_verified', 'not_registered',
+                'prov_count', 'master_count']:
+        if key not in st.session_state:
+            st.session_state[key] = None
 
     st.title("📋 Teacher Verification System")
     st.markdown("---")
 
-    # ── Session state init ──────────────────────────────────────────
-    if 'results_ready' not in st.session_state:
-        st.session_state.results_ready = False
-    if 'auto_verify_bytes' not in st.session_state:
-        st.session_state.auto_verify_bytes = None
-    if 'not_verified_bytes' not in st.session_state:
-        st.session_state.not_verified_bytes = None
-    if 'not_registered_bytes' not in st.session_state:
-        st.session_state.not_registered_bytes = None
-    if 'auto_verify_df' not in st.session_state:
-        st.session_state.auto_verify_df = None
-    if 'not_verified_df' not in st.session_state:
-        st.session_state.not_verified_df = None
-    if 'not_registered_df' not in st.session_state:
-        st.session_state.not_registered_df = None
-    if 'summary' not in st.session_state:
-        st.session_state.summary = None
-
-    # ── Reset button (top right) ─────────────────────────────────────
-    _, reset_col = st.columns([6, 1])
-    with reset_col:
-        if st.button("🔄 Reset", type="secondary", use_container_width=True):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
+    # ── Reset Button ──
+    if st.session_state.processing_done:
+        if st.button("🔄 Reset", type="secondary"):
+            for key in ['processing_done', 'auto_verify', 'not_verified', 'not_registered',
+                        'prov_count', 'master_count']:
+                st.session_state[key] = None
             st.rerun()
 
-    # ── File upload section ──────────────────────────────────────────
+    # ── File Upload Section ──
     col1, col2 = st.columns(2)
 
     with col1:
@@ -434,9 +368,9 @@ def main():
         st.download_button(
             label="📄 Download Sample Master Format",
             data=create_sample_master(),
-            file_name="Sample_Master_Format.xlsx",
+            file_name="Sample_Master_File.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="sample_master"
+            help="Download a sample Master file to understand the required format"
         )
 
     with col2:
@@ -450,17 +384,82 @@ def main():
         st.download_button(
             label="📄 Download Sample User Format",
             data=create_sample_user(),
-            file_name="Sample_User_Format.xlsx",
+            file_name="Sample_User_File.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="sample_user"
+            help="Download a sample User file to understand the required format"
         )
 
-    # ── If results already computed, show them immediately ───────────
-    if st.session_state.results_ready:
-        _render_results()
-        return
+    # ── If processing already done, show results directly ──
+    if st.session_state.processing_done:
+        auto_verify = st.session_state.auto_verify
+        not_verified = st.session_state.not_verified
+        not_registered = st.session_state.not_registered
 
-    # ── Process files ────────────────────────────────────────────────
+        st.success("✅ Processing completed! Results are ready below.")
+        st.markdown("---")
+        st.subheader("📊 Summary")
+
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.metric("Provisional Rows Processed", st.session_state.prov_count)
+        with c2:
+            st.metric("Auto Verify (≥70)", len(auto_verify))
+        with c3:
+            st.metric("Not Verified (<70)", len(not_verified))
+        with c4:
+            st.metric("Not Registered (<70)", len(not_registered))
+
+        st.markdown("---")
+        st.subheader("📥 Download Results")
+
+        dc1, dc2, dc3 = st.columns(3)
+        with dc1:
+            if len(auto_verify) > 0:
+                st.download_button(
+                    label="⬇️ Download Auto Verify",
+                    data=create_excel_download(auto_verify, "Auto_Verify"),
+                    file_name="Auto_verify_This.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="dl_auto"
+                )
+            else:
+                st.warning("No records with score ≥70")
+        with dc2:
+            if len(not_verified) > 0:
+                st.download_button(
+                    label="⬇️ Download Not Verified",
+                    data=create_excel_download(not_verified, "Not_Verified"),
+                    file_name="Not_Verified.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="dl_notv"
+                )
+            else:
+                st.warning("No records with score <70")
+        with dc3:
+            if len(not_registered) > 0:
+                st.download_button(
+                    label="⬇️ Download Not Registered",
+                    data=create_excel_download(not_registered, "Not_Registered"),
+                    file_name="Not_Registered.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="dl_notr"
+                )
+            else:
+                st.warning("No master records with score <70")
+
+        st.markdown("---")
+        st.subheader("👁️ Preview Results")
+        tab1, tab2, tab3 = st.tabs(["Auto Verify", "Not Verified", "Not Registered"])
+        with tab1:
+            st.dataframe(auto_verify.head(50), use_container_width=True) if len(auto_verify) > 0 else st.info("No records")
+        with tab2:
+            st.dataframe(not_verified.head(50), use_container_width=True) if len(not_verified) > 0 else st.info("No records")
+        with tab3:
+            st.dataframe(not_registered.head(50), use_container_width=True) if len(not_registered) > 0 else st.info("No records")
+
+        return  # Don't show processing button again
+
+    # ── Only show processing UI if not done yet ──
     if master_file and user_file:
         try:
             master_df = pd.read_excel(master_file)
@@ -478,49 +477,45 @@ def main():
                 st.error(f"❌ User File Error: {user_msg}")
                 return
 
-            # Count provisional rows
-            prov_col = next((c for c in user_df.columns if c.upper() == 'IS_PROVISIONAL'), None)
-            if prov_col:
-                prov_count = (user_df[prov_col].astype(str).str.strip().str.upper() == 'TRUE').sum()
-                st.success(f"✅ File structures validated successfully — {prov_count} IS_PROVISIONAL=True rows found in User file (Step 1 will only process these)")
-            else:
-                st.success("✅ File structures validated successfully")
-                st.warning("⚠️ IS_PROVISIONAL column not found in User file — processing all rows in Step 1")
+            st.success("✅ File structures validated successfully")
+
+            # Show provisional count
+            if 'IS_PROVISIONAL' in user_df.columns:
+                prov_count = (user_df['IS_PROVISIONAL'].astype(str).str.strip().str.upper() == 'TRUE').sum()
+                st.info(f"ℹ️ Step 1 will process **{prov_count}** rows where IS_PROVISIONAL = True (out of {len(user_df)} total)")
 
             if st.button("🚀 Start Processing", type="primary", use_container_width=True):
-                st.markdown("---")
+                progress_bar = st.progress(0)
+                progress_text = st.empty()
 
-                # ── Step 1 ──────────────────────────────────────────
-                st.markdown("**Step 1/2: Matching User file (IS_PROVISIONAL=True) → Master file...**")
-                pb1 = st.progress(0)
-                st1_text = st.empty()
+                progress_text.text("Step 1/2: Matching User → Master (Is_Provisional=True only)...")
 
-                user_results = process_user_to_master(user_df, master_df, pb1, st1_text)
-                pb1.progress(1.0)
-                st1_text.markdown("<div style='font-size:13px;color:#4CAF50;'>✅ Step 1 complete</div>", unsafe_allow_html=True)
+                # Step 1: User → Master (only Is_Provisional == True)
+                prov_results = process_user_to_master(
+                    user_df, master_df, progress_bar, progress_text, 0, 50
+                )
 
-                # ── Step 2 ──────────────────────────────────────────
-                st.markdown("**Step 2/2: Matching Master file → User file...**")
-                pb2 = st.progress(0)
-                st2_text = st.empty()
+                # Step 2: Master → User (all master rows)
+                progress_text.text("Step 2/2: Matching Master → User...")
+                master_results = process_master_to_user(
+                    master_df, user_df, progress_bar, progress_text, 50, 100
+                )
 
-                master_results = process_master_to_user(master_df, user_df, pb2, st2_text)
-                pb2.progress(1.0)
-                st2_text.markdown("<div style='font-size:13px;color:#4CAF50;'>✅ Step 2 complete</div>", unsafe_allow_html=True)
+                progress_bar.progress(100)
+                progress_text.text("✅ Processing complete!")
 
-                # ── Split & store ────────────────────────────────────
-                auto_verify = user_results[user_results['Score'] >= 70]
-                not_verified = user_results[user_results['Score'] < 70]
+                # Split results
+                auto_verify = prov_results[prov_results['Score'] >= 70] if len(prov_results) > 0 else pd.DataFrame()
+                not_verified = prov_results[prov_results['Score'] < 70] if len(prov_results) > 0 else pd.DataFrame()
                 not_registered = master_results[master_results['Score'] < 70]
 
-                st.session_state.auto_verify_bytes = create_excel_download(auto_verify, "Auto_Verify")
-                st.session_state.not_verified_bytes = create_excel_download(not_verified, "Not_Verified")
-                st.session_state.not_registered_bytes = create_excel_download(not_registered, "Not_Registered")
-                st.session_state.auto_verify_df = auto_verify
-                st.session_state.not_verified_df = not_verified
-                st.session_state.not_registered_df = not_registered
-                st.session_state.summary = (len(auto_verify), len(not_verified), len(not_registered))
-                st.session_state.results_ready = True
+                # Store in session state
+                st.session_state.processing_done = True
+                st.session_state.auto_verify = auto_verify
+                st.session_state.not_verified = not_verified
+                st.session_state.not_registered = not_registered
+                st.session_state.prov_count = len(prov_results)
+                st.session_state.master_count = len(master_df)
 
                 st.rerun()
 
@@ -530,87 +525,6 @@ def main():
 
     else:
         st.info("👆 Please upload both Master and User files to begin")
-
-
-def _render_results():
-    """Render results section from session state (persists across downloads)."""
-    n_auto, n_not_v, n_not_r = st.session_state.summary
-
-    st.success("✅ Processing completed!")
-    st.markdown("---")
-    st.subheader("📊 Summary")
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Auto Verify (≥70)", n_auto)
-    with col2:
-        st.metric("Not Verified (<70)", n_not_v)
-    with col3:
-        st.metric("Not Registered (<70)", n_not_r)
-
-    st.markdown("---")
-    st.subheader("📥 Download Results")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if n_auto > 0:
-            st.download_button(
-                label="⬇️ Download Auto Verify",
-                data=st.session_state.auto_verify_bytes,
-                file_name="Auto_verify_This.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="dl_auto"
-            )
-        else:
-            st.warning("No records with score ≥70")
-
-    with col2:
-        if n_not_v > 0:
-            st.download_button(
-                label="⬇️ Download Not Verified",
-                data=st.session_state.not_verified_bytes,
-                file_name="Not_Verified.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="dl_not_v"
-            )
-        else:
-            st.warning("No records with score <70")
-
-    with col3:
-        if n_not_r > 0:
-            st.download_button(
-                label="⬇️ Download Not Registered",
-                data=st.session_state.not_registered_bytes,
-                file_name="Not_Registered.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="dl_not_r"
-            )
-        else:
-            st.warning("No master records with score <70")
-
-    st.markdown("---")
-    st.subheader("👁️ Preview Results")
-
-    tab1, tab2, tab3 = st.tabs(["Auto Verify", "Not Verified", "Not Registered"])
-
-    with tab1:
-        if n_auto > 0:
-            st.dataframe(st.session_state.auto_verify_df.head(50), use_container_width=True)
-        else:
-            st.info("No records")
-
-    with tab2:
-        if n_not_v > 0:
-            st.dataframe(st.session_state.not_verified_df.head(50), use_container_width=True)
-        else:
-            st.info("No records")
-
-    with tab3:
-        if n_not_r > 0:
-            st.dataframe(st.session_state.not_registered_df.head(50), use_container_width=True)
-        else:
-            st.info("No records")
 
 
 if __name__ == "__main__":
