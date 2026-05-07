@@ -4,6 +4,7 @@ import numpy as np
 from io import BytesIO
 import re
 import time
+import gc
 
 # ══════════════════════════════════════════════════════════════════════
 # MATCHING FUNCTION
@@ -306,7 +307,7 @@ def process_user_to_master(user_df, master_df, progress_bar, progress_text, star
         })
 
         # Update progress
-        if total > 0 and i % 50 == 0:
+        if total > 0 and i % 1000 == 0:
             frac = (i + 1) / total
             pct = start_pct + frac * (end_pct - start_pct)
             progress_bar.progress(int(pct))
@@ -350,7 +351,7 @@ def process_master_to_user(master_df, user_df, progress_bar, progress_text, star
             'Details': details
         })
 
-        if total > 0 and i % 50 == 0:
+        if total > 0 and i % 1000 == 0:
             frac = (i + 1) / total
             pct = start_pct + frac * (end_pct - start_pct)
             progress_bar.progress(int(pct))
@@ -570,18 +571,20 @@ def main():
                 progress_bar = st.progress(0)
                 progress_text = st.empty()
 
-                progress_text.text("Step 1/2: Matching User → Master (Is_Provisional=True only)...")
+                progress_text.markdown("Step 1/2: Matching User → Master (Is_Provisional=True only)...")
 
                 # Step 1: User → Master (only Is_Provisional == True)
                 prov_results = process_user_to_master(
                     user_df, master_df, progress_bar, progress_text, 0, 50
                 )
+                gc.collect()
 
                 # Step 2: Master → User (all master rows)
-                progress_text.text("Step 2/2: Matching Master → User...")
+                progress_text.markdown("Step 2/2: Matching Master → User...")
                 master_results = process_master_to_user(
                     master_df, user_df, progress_bar, progress_text, 50, 100
                 )
+                gc.collect()
 
                 progress_bar.progress(100)
                 progress_text.text("✅ Processing complete!")
