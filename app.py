@@ -590,9 +590,9 @@ def main():
     # ━━━ HERO ━━━
     st.markdown("""
         <div class="hero">
-            <div class="hero-eyebrow">&#x26A1; Powered by Token Fuzzy Matching</div>
-            <h1 class="hero-title">Teacher <span class="accent">Autoverification</span> Tool</h1>
-            <p class="hero-sub">Upload your master list and user export &mdash; the system matches, scores, and categorises every record automatically.</p>
+            <div class="hero-eyebrow">&#x26A1; Token Fuzzy Matching engiene</div>
+            <h1 class="hero-title">Teacher <span class="accent">Smart Autoverification</span> Tool</h1>
+            <p class="hero-sub">Upload your master list and user list , and process in one click.</p>
         </div>
     """, unsafe_allow_html=True)
 
