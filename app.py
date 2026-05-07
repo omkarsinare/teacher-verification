@@ -192,15 +192,10 @@ def validate_user_file(df):
 # ══════════════════════════════════════════════════════════════════════
 
 def process_user_to_master(user_df, master_df, progress_bar, progress_text, start_pct, end_pct):
-    """
-    Match ONLY Is_Provisional == True rows from User file against Master file.
-    Returns (provisional_results_df, full_user_df_with_scores)
-    """
     master_names = master_df['TEACHER_NAME'].values
     master_phones = master_df['MOBILE_NO'].values
     master_udises = master_df['UDISE'].values
 
-    # Filter: only Is_Provisional == True rows
     if 'IS_PROVISIONAL' in user_df.columns:
         prov_mask = user_df['IS_PROVISIONAL'].astype(str).str.strip().str.upper() == 'TRUE'
         prov_df = user_df[prov_mask].copy()
@@ -232,14 +227,18 @@ def process_user_to_master(user_df, master_df, progress_bar, progress_text, star
             'Details': details
         })
 
-        # Update progress
         if total > 0:
             frac = (i + 1) / total
             pct = start_pct + frac * (end_pct - start_pct)
             progress_bar.progress(int(pct))
             elapsed = time.time() - start_time
             remaining = (elapsed / (i + 1)) * (total - i - 1) if i > 0 else 0
-            progress_text.text(f"Step 1/2: Matching User → Master  |  {i+1}/{total} rows  |  ⏱ ~{int(remaining)}s remaining")
+            progress_text.markdown(
+                f"<p style='color:#a0aec0; font-size:0.9rem; text-align:center;'>"
+                f"Step 1/2: Matching User → Master &nbsp;|&nbsp; {i+1}/{total} rows &nbsp;|&nbsp; ⏱ ~{int(remaining)}s remaining"
+                f"</p>",
+                unsafe_allow_html=True
+            )
 
     for key in results[0].keys() if results else []:
         prov_df[key] = [r[key] for r in results]
@@ -283,7 +282,12 @@ def process_master_to_user(master_df, user_df, progress_bar, progress_text, star
             progress_bar.progress(int(pct))
             elapsed = time.time() - start_time
             remaining = (elapsed / (i + 1)) * (total - i - 1) if i > 0 else 0
-            progress_text.text(f"Step 2/2: Matching Master → User  |  {i+1}/{total} rows  |  ⏱ ~{int(remaining)}s remaining")
+            progress_text.markdown(
+                f"<p style='color:#a0aec0; font-size:0.9rem; text-align:center;'>"
+                f"Step 2/2: Matching Master → User &nbsp;|&nbsp; {i+1}/{total} rows &nbsp;|&nbsp; ⏱ ~{int(remaining)}s remaining"
+                f"</p>",
+                unsafe_allow_html=True
+            )
 
     result_df = master_df.copy()
     for key in results[0].keys() if results else []:
@@ -332,219 +336,499 @@ def create_sample_user():
 
 def main():
     st.set_page_config(
-        page_title="Teacher Verification System",
+        page_title="Teacher Autoverification Tool",
         page_icon="🎓",
         layout="wide",
         initial_sidebar_state="collapsed"
     )
 
-    # Custom CSS for modern aesthetic design
+    # ── Dark Theme CSS matching PPT design ──
     st.markdown("""
         <style>
-        /* Import Google Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        /* Global Styles */
-        * {
-            font-family: 'Inter', sans-serif;
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+        /* ── Global Reset & Dark Background ── */
+        html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
+            background-color: #0f1117 !important;
+            font-family: 'DM Sans', sans-serif !important;
         }
-        
-        /* Main container */
-        .main {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem;
+
+        [data-testid="stMain"] {
+            background-color: #0f1117 !important;
         }
-        
-        /* Header styling */
-        h1 {
-            color: white !important;
-            font-weight: 700 !important;
-            font-size: 2.8rem !important;
+
+        [data-testid="stHeader"] {
+            background-color: #0f1117 !important;
+        }
+
+        section[data-testid="stSidebar"] {
+            display: none;
+        }
+
+        /* ── Hide Streamlit chrome ── */
+        #MainMenu, footer, header { visibility: hidden; }
+
+        /* ── Typography ── */
+        h1, h2, h3, h4, p, label, span, div {
+            font-family: 'DM Sans', sans-serif !important;
+        }
+
+        /* ── Page title bar ── */
+        .page-topbar {
+            background-color: #161b27;
+            border-bottom: 1px solid #2d3650;
+            padding: 10px 0 6px 0;
             text-align: center;
-            margin-bottom: 0.5rem !important;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 0;
         }
-        
-        h2 {
-            color: #667eea !important;
+        .page-topbar-label {
+            font-size: 0.7rem;
+            color: #6b7a9e;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        /* ── Hero header ── */
+        .hero-section {
+            background: linear-gradient(160deg, #161b27 0%, #1a2035 60%, #161b27 100%);
+            border-bottom: 1px solid #2d3650;
+            padding: 2.5rem 2rem 2rem 2rem;
+            text-align: center;
+            margin-bottom: 0;
+        }
+
+        .hero-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #e8ecf4;
+            letter-spacing: -0.02em;
+            margin: 0 0 0.4rem 0;
+            line-height: 1.2;
+        }
+
+        .hero-icon {
+            font-size: 1.8rem;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .hero-subtitle {
+            font-size: 0.88rem;
+            color: #6b7a9e;
+            font-weight: 400;
+            margin: 0;
+            max-width: 560px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        /* ── Main content area ── */
+        .main-content {
+            padding: 2rem 2rem 3rem 2rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* ── Upload card ── */
+        .upload-card {
+            background: #161b27;
+            border: 1px solid #2d3650;
+            border-radius: 14px;
+            padding: 1.6rem 1.6rem 1.2rem 1.6rem;
+            height: 100%;
+        }
+
+        .upload-card-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6b7a9e;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.25rem;
+        }
+
+        .upload-card-heading {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #e8ecf4;
+            margin-bottom: 0.25rem;
+        }
+
+        .upload-card-desc {
+            font-size: 0.82rem;
+            color: #4a5578;
+            margin-bottom: 1rem;
+        }
+
+        /* ── File uploader dark styling ── */
+        [data-testid="stFileUploader"] {
+            background: #0f1117 !important;
+            border: 1.5px dashed #2d3650 !important;
+            border-radius: 10px !important;
+        }
+
+        [data-testid="stFileUploader"] label {
+            color: #a0aec0 !important;
+            font-size: 0.85rem !important;
+        }
+
+        [data-testid="stFileUploaderDropzone"] {
+            background: #0f1117 !important;
+            border: none !important;
+        }
+
+        [data-testid="stFileUploaderDropzone"] p {
+            color: #6b7a9e !important;
+            font-size: 0.82rem !important;
+        }
+
+        /* ── File loaded pill ── */
+        .file-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1e2540;
+            border: 1px solid #2d3650;
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-pill-name {
+            font-size: 0.84rem;
+            color: #c8d0e7;
+            font-weight: 500;
+            font-family: 'DM Mono', monospace !important;
+        }
+
+        .file-pill-size {
+            font-size: 0.75rem;
+            color: #4a5578;
+        }
+
+        /* ── Download sample link style ── */
+        .stDownloadButton > button {
+            background: transparent !important;
+            color: #5b7cf6 !important;
+            border: none !important;
+            padding: 0.3rem 0 !important;
+            font-size: 0.82rem !important;
+            font-weight: 500 !important;
+            box-shadow: none !important;
+            text-decoration: underline !important;
+            text-underline-offset: 3px !important;
+            width: auto !important;
+        }
+
+        .stDownloadButton > button:hover {
+            color: #7b9bff !important;
+            background: transparent !important;
+            transform: none !important;
+        }
+
+        /* ── Validation success banner ── */
+        .validation-banner {
+            background: #0e1f1a;
+            border: 1px solid #1a4a35;
+            border-radius: 10px;
+            padding: 1rem 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1.2rem 0;
+        }
+
+        .validation-banner-icon { font-size: 1.1rem; }
+
+        .validation-banner-text {
+            font-size: 0.88rem;
+            color: #4ade80;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .validation-banner-sub {
+            font-size: 0.78rem;
+            color: #2d7a52;
+            margin: 0;
+        }
+
+        /* ── Info banner ── */
+        .info-banner {
+            background: #111827;
+            border: 1px solid #2d3650;
+            border-radius: 10px;
+            padding: 0.9rem 1.4rem;
+            margin: 0.8rem 0 1.2rem 0;
+        }
+
+        .info-banner-text {
+            font-size: 0.84rem;
+            color: #a0aec0;
+            margin: 0;
+        }
+
+        .info-banner-text strong {
+            color: #c8d0e7;
+        }
+
+        /* ── CTA Button ── */
+        .stButton > button {
+            background: #5b7cf6 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 10px !important;
+            padding: 0.7rem 2.5rem !important;
             font-weight: 600 !important;
-            font-size: 1.5rem !important;
-            margin-top: 1.5rem !important;
+            font-size: 0.95rem !important;
+            letter-spacing: 0.01em !important;
+            transition: all 0.2s ease !important;
+            box-shadow: 0 4px 20px rgba(91, 124, 246, 0.3) !important;
         }
-        
-        h3 {
-            color: #4a5568 !important;
-            font-weight: 600 !important;
-            font-size: 1.2rem !important;
+
+        .stButton > button:hover {
+            background: #7b9bff !important;
+            box-shadow: 0 6px 24px rgba(91, 124, 246, 0.45) !important;
+            transform: translateY(-1px) !important;
         }
-        
-        /* Card-like containers */
-        .stContainer {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+
+        /* ── Progress section ── */
+        .progress-card {
+            background: #161b27;
+            border: 1px solid #2d3650;
+            border-radius: 14px;
+            padding: 1.8rem 2rem;
+            margin: 1.5rem 0;
+        }
+
+        .progress-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #6b7a9e;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 1.2rem;
+        }
+
+        .progress-steps {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Streamlit progress bar */
+        .stProgress > div > div > div > div {
+            background: linear-gradient(90deg, #5b7cf6 0%, #818cf8 100%) !important;
+            border-radius: 6px !important;
+        }
+
+        .stProgress > div > div > div {
+            background: #1e2540 !important;
+            border-radius: 6px !important;
+        }
+
+        /* ── Completion success ── */
+        .completion-banner {
+            background: #0e1f1a;
+            border: 1px solid #1a4a35;
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+
+        .completion-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #4ade80;
+            margin: 0 0 0.3rem 0;
+        }
+
+        .completion-sub {
+            font-size: 0.85rem;
+            color: #2d7a52;
+            margin: 0;
+        }
+
+        /* ── Section heading ── */
+        .section-heading {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #6b7a9e;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin: 2rem 0 1rem 0;
+        }
+
+        /* ── Metric cards ── */
+        .metric-row {
+            display: flex;
+            gap: 1rem;
             margin-bottom: 1.5rem;
         }
-        
-        /* File uploader styling */
-        .uploadedFile {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 12px;
-            padding: 1rem;
-            border: 2px dashed #667eea;
+
+        [data-testid="stMetric"] {
+            background: #161b27 !important;
+            border: 1px solid #2d3650 !important;
+            border-radius: 12px !important;
+            padding: 1.2rem 1.5rem !important;
         }
-        
-        /* Button styling */
-        .stButton button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 0.75rem 2rem;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            width: 100%;
-        }
-        
-        .stButton button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-        }
-        
-        /* Download button styling */
-        .stDownloadButton button {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
-        }
-        
-        .stDownloadButton button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(56, 239, 125, 0.5);
-        }
-        
-        /* Metric styling */
+
         [data-testid="stMetricValue"] {
             font-size: 2rem !important;
             font-weight: 700 !important;
-            color: #667eea !important;
+            color: #e8ecf4 !important;
         }
-        
+
         [data-testid="stMetricLabel"] {
-            font-size: 0.9rem !important;
+            font-size: 0.78rem !important;
+            font-weight: 600 !important;
+            color: #6b7a9e !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.08em !important;
+        }
+
+        [data-testid="stMetricDelta"] {
+            font-size: 0.82rem !important;
             font-weight: 500 !important;
-            color: #4a5568 !important;
         }
-        
-        /* Info boxes */
-        .stAlert {
+
+        /* ── Download result cards ── */
+        .result-card {
             border-radius: 12px;
-            border-left: 4px solid #667eea;
-            background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
+            padding: 1.3rem 1.5rem 1rem 1.5rem;
+            margin-bottom: 0.8rem;
         }
-        
-        /* Success boxes */
-        .element-container:has(.stSuccess) {
-            border-radius: 12px;
+
+        .result-card.green {
+            background: #0a1f15;
+            border: 1px solid #1a4a35;
         }
-        
-        /* Dataframe styling */
-        .stDataFrame {
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+
+        .result-card.amber {
+            background: #1a1500;
+            border: 1px solid #3d3000;
         }
-        
-        /* Tab styling */
+
+        .result-card.red {
+            background: #1f0a0a;
+            border: 1px solid #4a1a1a;
+        }
+
+        .result-card-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .result-card.green .result-card-title { color: #4ade80; }
+        .result-card.amber .result-card-title { color: #fbbf24; }
+        .result-card.red .result-card-title { color: #f87171; }
+
+        .result-card-desc {
+            font-size: 0.78rem;
+            line-height: 1.4;
+            margin-bottom: 0.8rem;
+        }
+
+        .result-card.green .result-card-desc { color: #2d7a52; }
+        .result-card.amber .result-card-desc { color: #7a6220; }
+        .result-card.red .result-card-desc { color: #7a3030; }
+
+        /* ── Tabs ── */
         .stTabs [data-baseweb="tab-list"] {
-            gap: 8px;
-            background: transparent;
+            background: #0f1117 !important;
+            gap: 4px !important;
+            border-bottom: 1px solid #2d3650 !important;
         }
-        
+
         .stTabs [data-baseweb="tab"] {
-            border-radius: 12px;
-            padding: 12px 24px;
-            background: #f7fafc;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            background: transparent !important;
+            color: #6b7a9e !important;
+            border-radius: 8px 8px 0 0 !important;
+            font-size: 0.85rem !important;
+            font-weight: 500 !important;
+            padding: 10px 20px !important;
+            border-bottom: 2px solid transparent !important;
         }
-        
+
         .stTabs [aria-selected="true"] {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #161b27 !important;
+            color: #e8ecf4 !important;
+            border-bottom: 2px solid #5b7cf6 !important;
         }
-        
-        /* Progress bar */
-        .stProgress > div > div > div {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            border-radius: 10px;
+
+        .stTabs [data-baseweb="tab-panel"] {
+            background: #161b27 !important;
+            border: 1px solid #2d3650 !important;
+            border-top: none !important;
+            border-radius: 0 0 12px 12px !important;
+            padding: 1.2rem !important;
         }
-        
-        /* Remove Streamlit branding */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        
-        /* Column padding */
-        [data-testid="column"] {
-            padding: 0 1rem;
+
+        /* ── Dataframe ── */
+        .stDataFrame {
+            border-radius: 8px !important;
+            overflow: hidden !important;
         }
-        
-        /* Subtitle styling */
-        .subtitle {
+
+        /* ── Expander ── */
+        .stExpander {
+            background: #161b27 !important;
+            border: 1px solid #2d3650 !important;
+            border-radius: 10px !important;
+        }
+
+        .stExpander summary {
+            color: #a0aec0 !important;
+            font-size: 0.84rem !important;
+        }
+
+        /* ── Error/Alert ── */
+        .stAlert {
+            background: #1f0a0a !important;
+            border: 1px solid #4a1a1a !important;
+            border-radius: 10px !important;
+            color: #f87171 !important;
+        }
+
+        /* ── Reset button ── */
+        .reset-btn-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ── Getting started placeholder ── */
+        .getting-started {
+            background: #161b27;
+            border: 1.5px dashed #2d3650;
+            border-radius: 14px;
+            padding: 3rem 2rem;
             text-align: center;
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 400;
-            margin-bottom: 2rem;
-            opacity: 0.95;
+            margin: 1.5rem 0 3rem 0;
         }
-        
-        /* Feature cards */
-        .feature-card {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            height: 100%;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-        }
-        
-        /* Status badges */
-        .status-badge {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
+
+        .getting-started-title {
+            font-size: 1rem;
             font-weight: 600;
-            font-size: 0.9rem;
+            color: #4a5578;
+            margin-bottom: 0.5rem;
         }
-        
-        .status-success {
-            background: #d4edda;
-            color: #155724;
+
+        .getting-started-text {
+            font-size: 0.88rem;
+            color: #2d3650;
         }
-        
-        .status-warning {
-            background: #fff3cd;
-            color: #856404;
-        }
-        
-        .status-info {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
+
+        /* Column gap fix */
+        [data-testid="column"] { padding: 0 0.6rem; }
+
+        /* Dark scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f1117; }
+        ::-webkit-scrollbar-thumb { background: #2d3650; border-radius: 3px; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -554,176 +838,159 @@ def main():
         if key not in st.session_state:
             st.session_state[key] = None
 
-    # ── Hero Section ──
-    st.markdown("<h1>🎓 Teacher Verification System</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='subtitle'>Intelligent matching system for teacher verification with advanced fuzzy matching algorithms</p>", unsafe_allow_html=True)
+    # ── Hero Header ──
+    st.markdown("""
+        <div class='hero-section'>
+            <div style='display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-bottom:0.6rem;'>
+                <span style='font-size:1.6rem;'>🎓</span>
+                <h1 class='hero-title'>Teacher Autoverification Tool</h1>
+            </div>
+            <p class='hero-subtitle'>
+                Intelligent matching system for teacher verification with advanced fuzzy matching algorithms
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
 
-    # ── Reset Button (Only show after processing) ──
+    st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
+
+    # ── Reset after processing ──
     if st.session_state.processing_done:
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col2:
-            if st.button("🔄 Start New Verification", type="primary", use_container_width=True):
+        col_r1, col_r2, col_r3 = st.columns([2, 1, 2])
+        with col_r2:
+            if st.button("🔄 Start New Verification", use_container_width=True):
                 for key in ['processing_done', 'auto_verify', 'not_verified', 'not_registered',
                             'prov_count', 'master_count']:
                     st.session_state[key] = None
                 st.rerun()
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
 
-    # ── File Upload Section ──
+    # ══════════════════════════════════════════════════════════════════
+    # UPLOAD SECTION — always visible until processing done
+    # ══════════════════════════════════════════════════════════════════
+
     if not st.session_state.processing_done:
-        # Create a container for better spacing
-        with st.container():
-            col1, col2 = st.columns(2, gap="large")
+        col1, col2 = st.columns(2, gap="medium")
 
-            with col1:
+        with col1:
+            st.markdown("""
+                <div class='upload-card'>
+                    <div class='upload-card-title'>📊 Master File</div>
+                    <div class='upload-card-heading'>Teacher Master Database</div>
+                    <div class='upload-card-desc'>Upload your official teacher master database</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            with st.expander("ℹ️ View Expected Format"):
                 st.markdown("""
-                    <div class='feature-card'>
-                        <h3>📊 Master File</h3>
-                        <p style='color: #718096; margin-bottom: 1rem;'>Upload your master teacher database</p>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-                st.markdown("<br>", unsafe_allow_html=True)
-                
-                with st.expander("ℹ️ View Expected Format", expanded=False):
-                    st.markdown("""
-                    **Required Columns (in order):**
-                    1. `UDISE` - School UDISE code
-                    2. `TEACHER_NAME` - Full name of teacher
-                    3. `MOBILE_NO` - Mobile number (can be masked with X)
-                    
-                    **Example:**
-                    - UDISE: 27110100101
-                    - TEACHER_NAME: RAMESH KUMAR SHARMA
-                    - MOBILE_NO: 98XXXXXX01
-                    """)
-                
-                master_file = st.file_uploader(
-                    "Choose Master Excel File",
-                    type=['xlsx', 'xls'],
-                    key='master',
-                    help="Upload the master teacher database file"
-                )
-                
-                st.download_button(
-                    label="📥 Download Sample Master File",
-                    data=create_sample_master(),
-                    file_name="Sample_Master_File.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    help="Download a sample file to understand the required format",
-                    use_container_width=True
-                )
+                **Required Columns (in order):**
+                1. `UDISE` — School UDISE code
+                2. `TEACHER_NAME` — Full name of teacher
+                3. `MOBILE_NO` — Mobile number (can be masked with X)
 
-            with col2:
+                **Example:**
+                - UDISE: `27110100101`
+                - TEACHER_NAME: `RAMESH KUMAR SHARMA`
+                - MOBILE_NO: `98XXXXXX01`
+                """)
+
+            master_file = st.file_uploader(
+                "Choose Master Excel File",
+                type=['xlsx', 'xls'],
+                key='master',
+                help="Upload the master teacher database file"
+            )
+
+            st.download_button(
+                label="⬇ Download Sample Master Format",
+                data=create_sample_master(),
+                file_name="Sample_Master_File.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+
+        with col2:
+            st.markdown("""
+                <div class='upload-card'>
+                    <div class='upload-card-title'>👥 User List</div>
+                    <div class='upload-card-heading'>Ticklinks User Export</div>
+                    <div class='upload-card-desc'>Upload the user list exported from ticklinks</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            with st.expander("ℹ️ View Expected Format"):
                 st.markdown("""
-                    <div class='feature-card'>
-                        <h3>👥 User List</h3>
-                        <p style='color: #718096; margin-bottom: 1rem;'>Upload user list from ticklinks</p>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-                st.markdown("<br>", unsafe_allow_html=True)
-                
-                with st.expander("ℹ️ View Expected Format", expanded=False):
-                    st.markdown("""
-                    **Required Columns:**
-                    - `FULL_NAME` - Teacher's full name
-                    - `MOBILE_NUMBER` - Contact number
-                    - `UDISE_CODE` - School UDISE code (Column F)
-                    - `IS_PROVISIONAL` - Verification status
-                    
-                    **Note:** Upload the file directly from ticklinks without any modifications.
-                    """)
-                
-                user_file = st.file_uploader(
-                    "Choose User Excel File",
-                    type=['xlsx', 'xls'],
-                    key='user',
-                    help="Upload the user list extracted from ticklinks"
-                )
-                
-                st.download_button(
-                    label="📥 Download Sample User List",
-                    data=create_sample_user(),
-                    file_name="Sample_User_File.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    help="Download a sample file to understand the required format",
-                    use_container_width=True
-                )
+                **Required Columns:**
+                - `FULL_NAME` — Teacher's full name
+                - `MOBILE_NUMBER` — Contact number
+                - `UDISE_CODE` — School UDISE code (Column F)
+                - `IS_PROVISIONAL` — Verification status
 
-    # ── If processing already done, show results directly ──
+                **Note:** Upload the file directly from ticklinks without modifications.
+                """)
+
+            user_file = st.file_uploader(
+                "Choose User Excel File",
+                type=['xlsx', 'xls'],
+                key='user',
+                help="Upload the user list extracted from ticklinks"
+            )
+
+            st.download_button(
+                label="⬇ Download Sample User List Format",
+                data=create_sample_user(),
+                file_name="Sample_User_File.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+
+    # ══════════════════════════════════════════════════════════════════
+    # RESULTS SECTION (after processing)
+    # ══════════════════════════════════════════════════════════════════
+
     if st.session_state.processing_done:
-        auto_verify = st.session_state.auto_verify
+        auto_verify  = st.session_state.auto_verify
         not_verified = st.session_state.not_verified
         not_registered = st.session_state.not_registered
 
+        # Completion banner
         st.markdown("""
-            <div style='background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); 
-                        padding: 1.5rem; border-radius: 12px; margin: 2rem 0;
-                        border-left: 5px solid #28a745; text-align: center;'>
-                <h3 style='color: #155724; margin: 0;'>✅ Verification Complete!</h3>
-                <p style='color: #155724; margin: 0.5rem 0 0 0;'>Your results are ready for download</p>
+            <div class='completion-banner'>
+                <div class='completion-title'>✅ Verification Complete!</div>
+                <div class='completion-sub'>Your results are ready for download below</div>
             </div>
         """, unsafe_allow_html=True)
 
         # ── Summary Metrics ──
-        st.markdown("<h2>📊 Verification Summary</h2>", unsafe_allow_html=True)
-        
-        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-        
-        with metric_col1:
-            st.metric(
-                label="📝 Total Processed",
-                value=st.session_state.prov_count,
-                help="Total provisional rows processed"
-            )
-        
-        with metric_col2:
-            st.metric(
-                label="✅ Auto Verified",
-                value=len(auto_verify),
-                delta=f"{(len(auto_verify)/max(st.session_state.prov_count, 1)*100):.1f}%",
-                help="Records with match score ≥ 70"
-            )
-        
-        with metric_col3:
-            st.metric(
-                label="⚠️ Manual Review",
-                value=len(not_verified),
-                delta=f"{(len(not_verified)/max(st.session_state.prov_count, 1)*100):.1f}%",
-                delta_color="inverse",
-                help="Records with match score < 70"
-            )
-        
-        with metric_col4:
-            st.metric(
-                label="❌ Not Registered",
-                value=len(not_registered),
-                help="Master records not found in user list"
-            )
+        st.markdown("<div class='section-heading'>Verification Summary</div>", unsafe_allow_html=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        mc1, mc2, mc3, mc4 = st.columns(4)
+        with mc1:
+            st.metric("📝 Total Processed", st.session_state.prov_count, help="Total provisional rows processed")
+        with mc2:
+            st.metric("✅ Auto Verified", len(auto_verify),
+                      delta=f"{(len(auto_verify)/max(st.session_state.prov_count,1)*100):.1f}%",
+                      help="Records with match score ≥ 70")
+        with mc3:
+            st.metric("⚠️ Manual Review", len(not_verified),
+                      delta=f"{(len(not_verified)/max(st.session_state.prov_count,1)*100):.1f}%",
+                      delta_color="inverse",
+                      help="Records with match score < 70")
+        with mc4:
+            st.metric("❌ Not Registered", len(not_registered), help="Master records not in user list")
 
         # ── Download Section ──
-        st.markdown("<h2>📥 Download Results</h2>", unsafe_allow_html=True)
-        
-        download_col1, download_col2, download_col3 = st.columns(3)
-        
-        with download_col1:
+        st.markdown("<div class='section-heading'>Download Results</div>", unsafe_allow_html=True)
+
+        dc1, dc2, dc3 = st.columns(3)
+
+        with dc1:
             st.markdown("""
-                <div style='background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); 
-                            padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem;
-                            border-left: 5px solid #28a745; height: 120px;'>
-                    <h4 style='color: #155724; margin: 0 0 0.5rem 0;'>✅ Auto Verified</h4>
-                    <p style='color: #155724; margin: 0; font-size: 0.9rem;'>
-                        High confidence matches ready for automatic verification
-                    </p>
+                <div class='result-card green'>
+                    <div class='result-card-title'>✅ Auto Verified</div>
+                    <div class='result-card-desc'>High confidence matches ready for automatic verification</div>
                 </div>
             """, unsafe_allow_html=True)
-            
             if len(auto_verify) > 0:
                 st.download_button(
-                    label=f"⬇️ Download ({len(auto_verify)} records)",
+                    label=f"⬇ Download ({len(auto_verify)} records)",
                     data=create_excel_download(auto_verify, "Auto_Verify"),
                     file_name="Auto_Verify_This.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -731,23 +998,18 @@ def main():
                     use_container_width=True
                 )
             else:
-                st.info("No auto-verified records", icon="ℹ️")
-        
-        with download_col2:
+                st.markdown("<p style='color:#2d7a52;font-size:0.82rem;'>No auto-verified records</p>", unsafe_allow_html=True)
+
+        with dc2:
             st.markdown("""
-                <div style='background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); 
-                            padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem;
-                            border-left: 5px solid #ffc107; height: 120px;'>
-                    <h4 style='color: #856404; margin: 0 0 0.5rem 0;'>⚠️ Manual Review</h4>
-                    <p style='color: #856404; margin: 0; font-size: 0.9rem;'>
-                        Records requiring manual verification
-                    </p>
+                <div class='result-card amber'>
+                    <div class='result-card-title'>⚠️ Manual Review</div>
+                    <div class='result-card-desc'>Records requiring manual verification by admin</div>
                 </div>
             """, unsafe_allow_html=True)
-            
             if len(not_verified) > 0:
                 st.download_button(
-                    label=f"⬇️ Download ({len(not_verified)} records)",
+                    label=f"⬇ Download ({len(not_verified)} records)",
                     data=create_excel_download(not_verified, "Not_Verified"),
                     file_name="Manual_Review_Required.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -755,23 +1017,18 @@ def main():
                     use_container_width=True
                 )
             else:
-                st.info("No records need review", icon="ℹ️")
-        
-        with download_col3:
+                st.markdown("<p style='color:#7a6220;font-size:0.82rem;'>No records need review</p>", unsafe_allow_html=True)
+
+        with dc3:
             st.markdown("""
-                <div style='background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); 
-                            padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem;
-                            border-left: 5px solid #dc3545; height: 120px;'>
-                    <h4 style='color: #721c24; margin: 0 0 0.5rem 0;'>❌ Not Registered</h4>
-                    <p style='color: #721c24; margin: 0; font-size: 0.9rem;'>
-                        Teachers in master list but not in user database
-                    </p>
+                <div class='result-card red'>
+                    <div class='result-card-title'>❌ Not Registered</div>
+                    <div class='result-card-desc'>Teachers in master list but absent from user database</div>
                 </div>
             """, unsafe_allow_html=True)
-            
             if len(not_registered) > 0:
                 st.download_button(
-                    label=f"⬇️ Download ({len(not_registered)} records)",
+                    label=f"⬇ Download ({len(not_registered)} records)",
                     data=create_excel_download(not_registered, "Not_Registered"),
                     file_name="Not_Registered.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -779,181 +1036,166 @@ def main():
                     use_container_width=True
                 )
             else:
-                st.info("All records registered", icon="ℹ️")
+                st.markdown("<p style='color:#7a3030;font-size:0.82rem;'>All records registered</p>", unsafe_allow_html=True)
 
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        # ── Preview Tabs ──
+        st.markdown("<div class='section-heading'>Data Preview</div>", unsafe_allow_html=True)
 
-        # ── Preview Section ──
-        st.markdown("<h2>👁️ Data Preview</h2>", unsafe_allow_html=True)
-        
         tab1, tab2, tab3 = st.tabs([
             f"✅ Auto Verified ({len(auto_verify)})",
             f"⚠️ Manual Review ({len(not_verified)})",
             f"❌ Not Registered ({len(not_registered)})"
         ])
-        
+
         with tab1:
             if len(auto_verify) > 0:
-                st.dataframe(
-                    auto_verify.head(50),
-                    use_container_width=True,
-                    height=400
-                )
+                st.dataframe(auto_verify.head(50), use_container_width=True, height=380)
                 if len(auto_verify) > 50:
-                    st.info(f"Showing first 50 of {len(auto_verify)} records. Download the file to see all records.", icon="ℹ️")
+                    st.markdown(f"<p style='color:#4a5578;font-size:0.8rem;'>Showing first 50 of {len(auto_verify)} records.</p>", unsafe_allow_html=True)
             else:
-                st.info("No auto-verified records to display", icon="ℹ️")
-        
+                st.markdown("<p style='color:#4a5578;font-size:0.85rem;'>No auto-verified records to display.</p>", unsafe_allow_html=True)
+
         with tab2:
             if len(not_verified) > 0:
-                st.dataframe(
-                    not_verified.head(50),
-                    use_container_width=True,
-                    height=400
-                )
+                st.dataframe(not_verified.head(50), use_container_width=True, height=380)
                 if len(not_verified) > 50:
-                    st.info(f"Showing first 50 of {len(not_verified)} records. Download the file to see all records.", icon="ℹ️")
+                    st.markdown(f"<p style='color:#4a5578;font-size:0.8rem;'>Showing first 50 of {len(not_verified)} records.</p>", unsafe_allow_html=True)
             else:
-                st.info("No records requiring manual review", icon="ℹ️")
-        
+                st.markdown("<p style='color:#4a5578;font-size:0.85rem;'>No records requiring manual review.</p>", unsafe_allow_html=True)
+
         with tab3:
             if len(not_registered) > 0:
-                st.dataframe(
-                    not_registered.head(50),
-                    use_container_width=True,
-                    height=400
-                )
+                st.dataframe(not_registered.head(50), use_container_width=True, height=380)
                 if len(not_registered) > 50:
-                    st.info(f"Showing first 50 of {len(not_registered)} records. Download the file to see all records.", icon="ℹ️")
+                    st.markdown(f"<p style='color:#4a5578;font-size:0.8rem;'>Showing first 50 of {len(not_registered)} records.</p>", unsafe_allow_html=True)
             else:
-                st.info("All teachers are registered", icon="ℹ️")
+                st.markdown("<p style='color:#4a5578;font-size:0.85rem;'>All teachers are registered.</p>", unsafe_allow_html=True)
 
-        return  # Don't show processing button again
+        return  # Stop here — don't show upload UI again
 
-    # ── Only show processing UI if not done yet ──
+    # ══════════════════════════════════════════════════════════════════
+    # PROCESSING TRIGGER (files loaded but not yet run)
+    # ══════════════════════════════════════════════════════════════════
+
     if master_file and user_file:
         try:
             master_df = pd.read_excel(master_file)
-            user_df = pd.read_excel(user_file)
+            user_df   = pd.read_excel(user_file)
 
-            st.markdown("""
-                <div style='background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); 
-                            padding: 1.5rem; border-radius: 12px; margin: 2rem 0;
-                            border-left: 5px solid #17a2b8; text-align: center;'>
-                    <h4 style='color: #0c5460; margin: 0;'>📂 Files Loaded Successfully</h4>
-                    <p style='color: #0c5460; margin: 0.5rem 0 0 0;'>
-                        Master: {0} rows | User List: {1} rows
-                    </p>
-                </div>
-            """.format(len(master_df), len(user_df)), unsafe_allow_html=True)
-
+            # Validation
             master_valid, master_msg = validate_master_file(master_df)
-            user_valid, user_msg = validate_user_file(user_df)
+            user_valid,   user_msg   = validate_user_file(user_df)
 
             if not master_valid:
-                st.error(f"❌ Master File Error: {master_msg}", icon="🚫")
+                st.markdown(f"""
+                    <div style='background:#1f0a0a;border:1px solid #4a1a1a;border-radius:10px;
+                                padding:1rem 1.4rem;margin-top:1rem;'>
+                        <p style='color:#f87171;font-size:0.88rem;margin:0;'>❌ Master File Error: {master_msg}</p>
+                    </div>
+                """, unsafe_allow_html=True)
                 return
+
             if not user_valid:
-                st.error(f"❌ User File Error: {user_msg}", icon="🚫")
+                st.markdown(f"""
+                    <div style='background:#1f0a0a;border:1px solid #4a1a1a;border-radius:10px;
+                                padding:1rem 1.4rem;margin-top:1rem;'>
+                        <p style='color:#f87171;font-size:0.88rem;margin:0;'>❌ User File Error: {user_msg}</p>
+                    </div>
+                """, unsafe_allow_html=True)
                 return
 
-            st.success("✅ File structures validated successfully", icon="✅")
+            # Success banner
+            st.markdown(f"""
+                <div class='validation-banner'>
+                    <span class='validation-banner-icon'>✅</span>
+                    <div>
+                        <p class='validation-banner-text'>File structure validated and loaded successfully</p>
+                        <p class='validation-banner-sub'>Master: {len(master_df)} rows &nbsp;|&nbsp; User List: {len(user_df)} rows</p>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
 
-            # Show provisional count
+            # Provisional count info
             if 'IS_PROVISIONAL' in user_df.columns:
                 prov_count = (user_df['IS_PROVISIONAL'].astype(str).str.strip().str.upper() == 'TRUE').sum()
                 st.markdown(f"""
-                    <div style='background: linear-gradient(135deg, #e8f4f8 0%, #d4e9f2 100%); 
-                                padding: 1.5rem; border-radius: 12px; margin: 1.5rem 0;
-                                border-left: 5px solid #3498db;'>
-                        <p style='color: #1e5a7d; margin: 0; font-size: 1rem;'>
-                            <strong>ℹ️ Processing Information:</strong><br>
+                    <div class='info-banner'>
+                        <p class='info-banner-text'>
+                            <strong>ℹ️ Processing Information:</strong>&nbsp;
                             System will process <strong>{prov_count}</strong> provisional records (out of {len(user_df)} total)
                         </p>
                     </div>
                 """, unsafe_allow_html=True)
 
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                if st.button("🚀 Start Verification Process", type="primary", use_container_width=True):
-                    # Create a container for progress
-                    progress_container = st.container()
-                    
-                    with progress_container:
-                        st.markdown("""
-                            <div style='background: white; padding: 2rem; border-radius: 16px; 
-                                        box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin: 2rem 0;'>
-                                <h3 style='color: #667eea; text-align: center; margin-bottom: 1.5rem;'>
-                                    🔄 Verification in Progress
-                                </h3>
-                            </div>
-                        """, unsafe_allow_html=True)
-                        
-                        progress_bar = st.progress(0)
-                        progress_text = st.empty()
+            st.markdown("<div style='height:0.8rem'></div>", unsafe_allow_html=True)
 
-                        progress_text.markdown("""
-                            <p style='text-align: center; color: #4a5568; font-size: 1.1rem;'>
-                                <strong>Step 1/2:</strong> Matching User → Master (Provisional records only)...
-                            </p>
-                        """, unsafe_allow_html=True)
+            # CTA button
+            col_b1, col_b2, col_b3 = st.columns([2, 1.5, 2])
+            with col_b2:
+                start_clicked = st.button("🚀 Start Verification Process", use_container_width=True)
 
-                        # Step 1: User → Master (only Is_Provisional == True)
-                        prov_results = process_user_to_master(
-                            user_df, master_df, progress_bar, progress_text, 0, 50
-                        )
+            if start_clicked:
+                # Progress card
+                st.markdown("""
+                    <div class='progress-card'>
+                        <div class='progress-label'>⚡ Verification in Progress</div>
+                    </div>
+                """, unsafe_allow_html=True)
 
-                        # Step 2: Master → User (all master rows)
-                        progress_text.markdown("""
-                            <p style='text-align: center; color: #4a5568; font-size: 1.1rem;'>
-                                <strong>Step 2/2:</strong> Matching Master → User...
-                            </p>
-                        """, unsafe_allow_html=True)
-                        
-                        master_results = process_master_to_user(
-                            master_df, user_df, progress_bar, progress_text, 50, 100
-                        )
+                progress_bar  = st.progress(0)
+                progress_text = st.empty()
 
-                        progress_bar.progress(100)
-                        progress_text.markdown("""
-                            <p style='text-align: center; color: #28a745; font-size: 1.2rem; font-weight: 600;'>
-                                ✅ Processing Complete!
-                            </p>
-                        """, unsafe_allow_html=True)
-                        
-                        time.sleep(1)  # Brief pause to show completion
+                progress_text.markdown(
+                    "<p style='color:#6b7a9e;font-size:0.85rem;text-align:center;'>Initializing matching engine...</p>",
+                    unsafe_allow_html=True
+                )
 
-                        # Split results
-                        auto_verify = prov_results[prov_results['Score'] >= 70] if len(prov_results) > 0 else pd.DataFrame()
-                        not_verified = prov_results[prov_results['Score'] < 70] if len(prov_results) > 0 else pd.DataFrame()
-                        not_registered = master_results[master_results['Score'] < 70]
+                # Step 1
+                prov_results = process_user_to_master(
+                    user_df, master_df, progress_bar, progress_text, 0, 50
+                )
 
-                        # Store in session state
-                        st.session_state.processing_done = True
-                        st.session_state.auto_verify = auto_verify
-                        st.session_state.not_verified = not_verified
-                        st.session_state.not_registered = not_registered
-                        st.session_state.prov_count = len(prov_results)
-                        st.session_state.master_count = len(master_df)
+                # Step 2
+                master_results = process_master_to_user(
+                    master_df, user_df, progress_bar, progress_text, 50, 100
+                )
 
-                        st.rerun()
+                progress_bar.progress(100)
+                progress_text.markdown(
+                    "<p style='color:#4ade80;font-size:0.9rem;font-weight:600;text-align:center;'>✅ 100% completed — 0 sec remaining</p>",
+                    unsafe_allow_html=True
+                )
+                time.sleep(0.8)
+
+                # Categorise
+                auto_verify    = prov_results[prov_results['Score'] >= 70] if len(prov_results) > 0 else pd.DataFrame()
+                not_verified   = prov_results[prov_results['Score'] < 70]  if len(prov_results) > 0 else pd.DataFrame()
+                not_registered = master_results[master_results['Score'] < 70]
+
+                # Persist
+                st.session_state.processing_done = True
+                st.session_state.auto_verify      = auto_verify
+                st.session_state.not_verified     = not_verified
+                st.session_state.not_registered   = not_registered
+                st.session_state.prov_count       = len(prov_results)
+                st.session_state.master_count     = len(master_df)
+
+                st.rerun()
 
         except Exception as e:
-            st.error(f"❌ An error occurred: {str(e)}", icon="🚫")
+            st.error(f"❌ An error occurred: {str(e)}")
             with st.expander("View Error Details"):
                 st.exception(e)
 
-    elif not st.session_state.processing_done:
+    else:
+        # ── Nothing uploaded yet ──
         st.markdown("""
-            <div style='background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); 
-                        padding: 3rem; border-radius: 16px; margin: 3rem 0;
-                        text-align: center; border: 2px dashed #667eea;'>
-                <h3 style='color: #1976d2; margin-bottom: 1rem;'>👆 Getting Started</h3>
-                <p style='color: #1565c0; font-size: 1.1rem; margin: 0;'>
-                    Please upload both <strong>Master File</strong> and <strong>User List</strong> to begin the verification process
-                </p>
+            <div class='getting-started'>
+                <div class='getting-started-title'>👆 Getting Started</div>
+                <div class='getting-started-text'>
+                    Please upload both <strong>Master File</strong> and <strong>User List</strong>
+                    above to begin the verification process
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
