@@ -366,7 +366,7 @@ def main():
             key='master'
         )
         st.download_button(
-            label="📄 Download Sample Master Format",
+            label="📄 Download Sample Master File",
             data=create_sample_master(),
             file_name="Sample_Master_File.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -374,15 +374,15 @@ def main():
         )
 
     with col2:
-        st.subheader("📁 Upload User File")
-        st.info("Must contain: FULL_NAME, MOBILE_NUMBER, UDISE_CODE (column F), IS_PROVISIONAL (column K)")
+        st.subheader("📁 Upload User List")
+        st.info("Upload the user list extracted from ticklinks directly no change needed")
         user_file = st.file_uploader(
             "Upload User File (Excel)",
             type=['xlsx', 'xls'],
             key='user'
         )
         st.download_button(
-            label="📄 Download Sample User Format",
+            label="📄 Download Sample User List",
             data=create_sample_user(),
             file_name="Sample_User_File.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -438,7 +438,7 @@ def main():
         with dc3:
             if len(not_registered) > 0:
                 st.download_button(
-                    label="⬇️ Download Not Registered",
+                    label="⬇️ Download Not Registered List",
                     data=create_excel_download(not_registered, "Not_Registered"),
                     file_name="Not_Registered.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
