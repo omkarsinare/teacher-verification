@@ -1,5 +1,10 @@
 [server]
 maxMessageSize = 500
+enableXsrfProtection = false
+enableCORS = false
 
 [runner]
 fastReruns = false
+
+[browser]
+gatherUsageStats = false
