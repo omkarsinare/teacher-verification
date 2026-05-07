@@ -604,6 +604,8 @@ def main():
 
                 st.success("✅ Results ready below")
 
+                st.experimental_rerun()
+
         except Exception as e:
             st.error(f"❌ Error: {str(e)}")
             st.exception(e)
