@@ -1,0 +1,5 @@
+[server]
+maxMessageSize = 500
+
+[runner]
+fastReruns = false
