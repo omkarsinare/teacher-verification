@@ -430,35 +430,27 @@ def main():
             margin: 0 auto;
         }
 
-        /* ── Upload card ── */
-        .upload-card {
-            background: #161b27;
+        /* ── Step badge above uploader ── */
+        .step-badge {
+            display: inline-block;
+            background: #1e2540;
             border: 1px solid #2d3650;
-            border-radius: 14px;
-            padding: 1.6rem 1.6rem 1.2rem 1.6rem;
-            height: 100%;
-        }
-
-        .upload-card-title {
-            font-size: 0.8rem;
+            border-radius: 20px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            color: #6b7a9e;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 0.25rem;
+            color: #818cf8;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.8rem;
         }
 
-        .upload-card-heading {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #e8ecf4;
-            margin-bottom: 0.25rem;
-        }
-
-        .upload-card-desc {
-            font-size: 0.82rem;
-            color: #4a5578;
-            margin-bottom: 1rem;
+        /* ── File uploader label as heading ── */
+        [data-testid="stFileUploader"] > label {
+            font-size: 1rem !important;
+            font-weight: 700 !important;
+            color: #e8ecf4 !important;
+            letter-spacing: -0.01em !important;
+            margin-bottom: 0.5rem !important;
         }
 
         /* ── File uploader dark styling ── */
@@ -872,13 +864,7 @@ def main():
         col1, col2 = st.columns(2, gap="medium")
 
         with col1:
-            st.markdown("""
-                <div class='upload-card'>
-                    <div class='upload-card-title'>📊 Master File</div>
-                    <div class='upload-card-heading'>Teacher Master Database</div>
-                    <div class='upload-card-desc'>Upload your official teacher master database</div>
-                </div>
-            """, unsafe_allow_html=True)
+            st.markdown("<div class='step-badge'>📊 Step 1 &nbsp;—&nbsp; Master File</div>", unsafe_allow_html=True)
 
             with st.expander("ℹ️ View Expected Format"):
                 st.markdown("""
@@ -894,7 +880,7 @@ def main():
                 """)
 
             master_file = st.file_uploader(
-                "Choose Master Excel File",
+                "Upload Master List",
                 type=['xlsx', 'xls'],
                 key='master',
                 help="Upload the master teacher database file"
@@ -908,13 +894,7 @@ def main():
             )
 
         with col2:
-            st.markdown("""
-                <div class='upload-card'>
-                    <div class='upload-card-title'>👥 User List</div>
-                    <div class='upload-card-heading'>Ticklinks User Export</div>
-                    <div class='upload-card-desc'>Upload the user list exported from ticklinks</div>
-                </div>
-            """, unsafe_allow_html=True)
+            st.markdown("<div class='step-badge'>👥 Step 2 &nbsp;—&nbsp; User List</div>", unsafe_allow_html=True)
 
             with st.expander("ℹ️ View Expected Format"):
                 st.markdown("""
@@ -928,7 +908,7 @@ def main():
                 """)
 
             user_file = st.file_uploader(
-                "Choose User Excel File",
+                "Upload User List",
                 type=['xlsx', 'xls'],
                 key='user',
                 help="Upload the user list extracted from ticklinks"
