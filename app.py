@@ -224,9 +224,6 @@ def compare_name_phone_single(master_names, input_name, master_phones, input_pho
     return best_show, best_name, best_phone, best_udise, best_rule, best_details
 
 
-# KEEP THE REST OF YOUR FILE EXACTLY SAME
-
-
 # ══════════════════════════════════════════════════════════════════════
 # FILE VALIDATION
 # ══════════════════════════════════════════════════════════════════════
@@ -401,15 +398,253 @@ def create_sample_user():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# STREAMLIT UI
+# STREAMLIT UI - IMPROVED DESIGN
 # ══════════════════════════════════════════════════════════════════════
 
 def main():
     st.set_page_config(
         page_title="Teacher Verification System",
         page_icon="📋",
-        layout="wide"
+        layout="wide",
+        initial_sidebar_state="collapsed"
     )
+
+    # Custom CSS for aesthetic design
+    st.markdown("""
+        <style>
+        /* Global Styles */
+        .stApp {
+            background: #0f172a;
+        }
+        
+        .main .block-container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            background: #1e293b;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            margin-top: 2rem;
+        }
+        
+        /* Header */
+        .main-header {
+            text-align: center;
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: #ffffff !important;
+        }
+        
+        /* Tool Title */
+        .tool-title {
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.4rem;
+            color: #a78bfa !important;
+            text-transform: uppercase;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #94a3b8 !important;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+        
+        /* Upload Cards */
+        .upload-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1.8rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease;
+            height: 160px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .upload-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+        }
+        
+        .upload-card-alt {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 1.8rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(245, 87, 108, 0.4);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease;
+            height: 160px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .upload-card-alt:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(245, 87, 108, 0.5);
+        }
+        
+        .card-title {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .card-note {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.92rem;
+            font-weight: 500;
+            line-height: 1.5;
+            margin-top: -0.4rem;
+        }
+        
+        /* Metrics */
+        .metric-container {
+            background: linear-gradient(135deg, #334155 0%, #475569 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            margin-bottom: 1rem;
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #e0e7ff;
+            margin-bottom: 0.3rem;
+        }
+        
+        .metric-label {
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+        
+        /* Buttons */
+        .stButton > button {
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 0.6rem 1.2rem;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .stButton > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        
+        .stDownloadButton > button {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 10px;
+            font-weight: 600;
+            border: none;
+        }
+        
+        .stDownloadButton > button:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        /* File Uploader */
+        .stFileUploader {
+            background: #334155;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        
+        .stFileUploader label {
+            color: #e2e8f0 !important;
+        }
+        
+        .stFileUploader [data-testid="stFileUploaderDropzone"] {
+            background-color: #1e293b;
+            border: 2px dashed #475569;
+        }
+        
+        .stFileUploader [data-testid="stFileUploaderDropzone"]:hover {
+            border-color: #667eea;
+            background-color: #334155;
+        }
+        
+        .stFileUploader small {
+            color: #94a3b8 !important;
+        }
+        
+        /* Divider */
+        hr {
+            margin: 2.5rem 0;
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #667eea, transparent);
+        }
+        
+        /* Tabs */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 1rem;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            height: 3rem;
+            border-radius: 10px 10px 0 0;
+            padding: 0 2rem;
+            font-weight: 600;
+        }
+        
+        /* Progress */
+        .stProgress > div > div {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        /* Info boxes */
+        .info-box {
+            background: #1e3a5f;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            color: #bfdbfe;
+        }
+        
+        /* Text colors */
+        p, span, div {
+            color: #e2e8f0;
+        }
+        
+        /* Dataframe styling */
+        .stDataFrame {
+            background: #334155;
+        }
+        
+        /* Tab styling for dark theme */
+        .stTabs [data-baseweb="tab-list"] {
+            background: #1e293b;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            color: #94a3b8;
+        }
+        
+        .stTabs [aria-selected="true"] {
+            color: #667eea;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
     # ── Session State Init ──
     for key in ['processing_done', 'auto_verify', 'not_verified', 'not_registered',
@@ -417,51 +652,70 @@ def main():
         if key not in st.session_state:
             st.session_state[key] = None
 
-    st.title("📋 Teacher Verification System")
-    st.markdown("---")
-
-    # ── Reset Button ──
+    # ── Header ──
+    st.markdown('<h1 class="main-header">📋 Teacher Verification System</h1>', unsafe_allow_html=True)
+    st.markdown('<h2 class="tool-title">Smart Auto Verification Tool</h2>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">Upload files, match records, and download results seamlessly</p>', unsafe_allow_html=True)
+    
+    # ── Reset Button (Top Right) ──
     if st.session_state.processing_done:
-        if st.button("🔄 Reset", type="secondary"):
-            for key in ['processing_done', 'auto_verify', 'not_verified', 'not_registered',
-                        'prov_count', 'master_count']:
-                st.session_state[key] = None
-            st.rerun()
+        col_space, col_reset = st.columns([8, 1])
+        with col_reset:
+            if st.button("🔄 Reset", type="secondary", use_container_width=True):
+                for key in ['processing_done', 'auto_verify', 'not_verified', 'not_registered',
+                            'prov_count', 'master_count']:
+                    st.session_state[key] = None
+                st.rerun()
 
     # ── File Upload Section ──
-    col1, col2 = st.columns(2)
+    if not st.session_state.processing_done:
+        col1, col2 = st.columns(2, gap="large")
 
-    with col1:
-        st.subheader("📁 Upload Master File")
-        st.info("Expected columns: UDISE, TEACHER_NAME, MOBILE_NO")
-        master_file = st.file_uploader(
-            "Upload Master File (Excel)",
-            type=['xlsx', 'xls'],
-            key='master'
-        )
-        st.download_button(
-            label="📄 Download Sample Master Format",
-            data=create_sample_master(),
-            file_name="Sample_Master_File.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            help="Download a sample Master file to understand the required format"
-        )
+        with col1:
+            st.markdown('''
+                <div class="upload-card">
+                    <div class="card-title">📂 Master File</div>
+                    <div class="card-note">Check the format by downloading the sample from below and upload Teacher\'s data in that format strictly.</div>
+                </div>
+            ''', unsafe_allow_html=True)
+            
+            master_file = st.file_uploader(
+                "Upload Master Excel File",
+                type=['xlsx', 'xls'],
+                key='master',
+                label_visibility="collapsed"
+            )
+            
+            st.download_button(
+                label="📥 Download Sample",
+                data=create_sample_master(),
+                file_name="Sample_Master.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
 
-    with col2:
-        st.subheader("📁 Upload User File")
-        st.info("Must contain: FULL_NAME, MOBILE_NUMBER, UDISE_CODE (column F), IS_PROVISIONAL (column K)")
-        user_file = st.file_uploader(
-            "Upload User File (Excel)",
-            type=['xlsx', 'xls'],
-            key='user'
-        )
-        st.download_button(
-            label="📄 Download Sample User Format",
-            data=create_sample_user(),
-            file_name="Sample_User_File.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            help="Download a sample User file to understand the required format"
-        )
+        with col2:
+            st.markdown('''
+                <div class="upload-card-alt">
+                    <div class="card-title">📂 User File</div>
+                    <div class="card-note">Extract the User List from Ticklinks for that district and upload it here directly.</div>
+                </div>
+            ''', unsafe_allow_html=True)
+            
+            user_file = st.file_uploader(
+                "Upload User Excel File",
+                type=['xlsx', 'xls'],
+                key='user',
+                label_visibility="collapsed"
+            )
+            
+            st.download_button(
+                label="📥 Download Sample",
+                data=create_sample_user(),
+                file_name="Sample_User.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
 
     # ── If processing already done, show results directly ──
     if st.session_state.processing_done:
@@ -469,76 +723,112 @@ def main():
         not_verified = st.session_state.not_verified
         not_registered = st.session_state.not_registered
 
-        st.success("✅ Processing completed! Results are ready below.")
         st.markdown("---")
-        st.subheader("📊 Summary")
+        st.markdown("## 📊 Processing Complete")
+        st.markdown('<div class="info-box">✅ All records have been matched and categorized successfully!</div>', unsafe_allow_html=True)
 
-        c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            st.metric("Provisional Rows Processed", st.session_state.prov_count)
-        with c2:
-            st.metric("Auto Verify (≥70)", len(auto_verify))
-        with c3:
-            st.metric("Not Verified (<70)", len(not_verified))
-        with c4:
-            st.metric("Not Registered (<70)", len(not_registered))
+        # Metrics
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.markdown(f'''
+                <div class="metric-container">
+                    <div class="metric-value">{st.session_state.prov_count}</div>
+                    <div class="metric-label">Total Processed</div>
+                </div>
+            ''', unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f'''
+                <div class="metric-container" style="border-left-color: #10b981;">
+                    <div class="metric-value" style="color: #6ee7b7;">{len(auto_verify)}</div>
+                    <div class="metric-label">Auto Verified</div>
+                </div>
+            ''', unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown(f'''
+                <div class="metric-container" style="border-left-color: #f59e0b;">
+                    <div class="metric-value" style="color: #fbbf24;">{len(not_verified)}</div>
+                    <div class="metric-label">Not Verified</div>
+                </div>
+            ''', unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown(f'''
+                <div class="metric-container" style="border-left-color: #ef4444;">
+                    <div class="metric-value" style="color: #fca5a5;">{len(not_registered)}</div>
+                    <div class="metric-label">Not Registered</div>
+                </div>
+            ''', unsafe_allow_html=True)
 
         st.markdown("---")
-        st.subheader("📥 Download Results")
+        st.markdown("## 📥 Download Results")
 
+        # Download buttons in a row
         dc1, dc2, dc3 = st.columns(3)
+        
         with dc1:
             if len(auto_verify) > 0:
                 st.download_button(
-                    label="⬇️ Download Auto Verify",
+                    label="✅ Auto Verify",
                     data=create_excel_download(auto_verify, "Auto_Verify"),
-                    file_name="Auto_verify_This.xlsx",
+                    file_name="Auto_Verify.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    key="dl_auto"
+                    key="dl_auto",
+                    use_container_width=True
                 )
             else:
-                st.warning("No records with score ≥70")
+                st.info("No records")
+                
         with dc2:
             if len(not_verified) > 0:
                 st.download_button(
-                    label="⬇️ Download Not Verified",
+                    label="⚠️ Not Verified",
                     data=create_excel_download(not_verified, "Not_Verified"),
                     file_name="Not_Verified.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    key="dl_notv"
+                    key="dl_notv",
+                    use_container_width=True
                 )
             else:
-                st.warning("No records with score <70")
+                st.info("No records")
+                
         with dc3:
             if len(not_registered) > 0:
                 st.download_button(
-                    label="⬇️ Download Not Registered",
+                    label="❌ Not Registered",
                     data=create_excel_download(not_registered, "Not_Registered"),
                     file_name="Not_Registered.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    key="dl_notr"
+                    key="dl_notr",
+                    use_container_width=True
                 )
             else:
-                st.warning("No master records with score <70")
+                st.info("No records")
 
         st.markdown("---")
-        st.subheader("👁️ Preview Results")
-        tab1, tab2, tab3 = st.tabs(["Auto Verify", "Not Verified", "Not Registered"])
+        st.markdown("## 👁️ Preview Results")
+        
+        tab1, tab2, tab3 = st.tabs(["✅ Auto Verify", "⚠️ Not Verified", "❌ Not Registered"])
+        
         with tab1:
             if len(auto_verify) > 0:
-                st.dataframe(auto_verify.head(50), use_container_width=True)
+                st.dataframe(auto_verify.head(50), use_container_width=True, height=400)
             else:
-                st.info("No records")
+                st.info("No records to display")
+                
         with tab2:
             if len(not_verified) > 0:
-                st.dataframe(not_verified.head(50), use_container_width=True)
+                st.dataframe(not_verified.head(50), use_container_width=True, height=400)
             else:
-                st.info("No records")
+                st.info("No records to display")
+                
         with tab3:
             if len(not_registered) > 0:
-                st.dataframe(not_registered.head(50), use_container_width=True)
+                st.dataframe(not_registered.head(50), use_container_width=True, height=400)
             else:
-                st.info("No records")
+                st.info("No records to display")
 
         return  # Don't show processing button again
 
@@ -548,7 +838,7 @@ def main():
             master_df = pd.read_excel(master_file)
             user_df = pd.read_excel(user_file)
 
-            st.success(f"✅ Files loaded: Master ({len(master_df)} rows), User ({len(user_df)} rows)")
+            st.markdown(f'<div class="info-box">✅ Files loaded successfully! Master: {len(master_df)} rows | User: {len(user_df)} rows</div>', unsafe_allow_html=True)
 
             master_valid, master_msg = validate_master_file(master_df)
             user_valid, user_msg = validate_user_file(user_df)
@@ -560,58 +850,59 @@ def main():
                 st.error(f"❌ User File Error: {user_msg}")
                 return
 
-            st.success("✅ File structures validated successfully")
-
             # Show provisional count
             if 'IS_PROVISIONAL' in user_df.columns:
                 prov_count = (user_df['IS_PROVISIONAL'].astype(str).str.strip().str.upper() == 'TRUE').sum()
-                st.info(f"ℹ️ Step 1 will process **{prov_count}** rows where IS_PROVISIONAL = True (out of {len(user_df)} total)")
+                st.markdown(f'<div class="info-box">ℹ️ Found <strong>{prov_count}</strong> provisional records to process</div>', unsafe_allow_html=True)
 
-            if st.button("🚀 Start Processing", type="primary", use_container_width=True):
-                progress_bar = st.progress(0)
-                progress_text = st.empty()
+            # Centered process button
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                if st.button("🚀 Start Processing", type="primary", use_container_width=True):
+                    progress_bar = st.progress(0)
+                    progress_text = st.empty()
 
-                progress_text.markdown("Step 1/2: Matching User → Master (Is_Provisional=True only)...")
+                    progress_text.markdown("**Step 1/2:** Matching User → Master...")
 
-                # Step 1: User → Master (only Is_Provisional == True)
-                prov_results = process_user_to_master(
-                    user_df, master_df, progress_bar, progress_text, 0, 50
-                )
-                gc.collect()
+                    # Step 1: User → Master (only Is_Provisional == True)
+                    prov_results = process_user_to_master(
+                        user_df, master_df, progress_bar, progress_text, 0, 50
+                    )
+                    gc.collect()
 
-                # Step 2: Master → User (all master rows)
-                progress_text.markdown("Step 2/2: Matching Master → User...")
-                master_results = process_master_to_user(
-                    master_df, user_df, progress_bar, progress_text, 50, 100
-                )
-                gc.collect()
+                    # Step 2: Master → User (all master rows)
+                    progress_text.markdown("**Step 2/2:** Matching Master → User...")
+                    master_results = process_master_to_user(
+                        master_df, user_df, progress_bar, progress_text, 50, 100
+                    )
+                    gc.collect()
 
-                progress_bar.progress(100)
-                progress_text.text("✅ Processing complete!")
+                    progress_bar.progress(100)
+                    progress_text.markdown("✅ **Processing complete!**")
 
-                # Split results
-                auto_verify = prov_results[prov_results['Score'] >= 70] if len(prov_results) > 0 else pd.DataFrame()
-                not_verified = prov_results[prov_results['Score'] < 70] if len(prov_results) > 0 else pd.DataFrame()
-                not_registered = master_results[master_results['Score'] < 70]
+                    # Split results
+                    auto_verify = prov_results[prov_results['Score'] >= 70] if len(prov_results) > 0 else pd.DataFrame()
+                    not_verified = prov_results[prov_results['Score'] < 70] if len(prov_results) > 0 else pd.DataFrame()
+                    not_registered = master_results[master_results['Score'] < 70]
 
-                # Store in session state
-                st.session_state.processing_done = True
-                st.session_state.auto_verify = auto_verify
-                st.session_state.not_verified = not_verified
-                st.session_state.not_registered = not_registered
-                st.session_state.prov_count = len(prov_results)
-                st.session_state.master_count = len(master_df)
+                    # Store in session state
+                    st.session_state.processing_done = True
+                    st.session_state.auto_verify = auto_verify
+                    st.session_state.not_verified = not_verified
+                    st.session_state.not_registered = not_registered
+                    st.session_state.prov_count = len(prov_results)
+                    st.session_state.master_count = len(master_df)
 
-                st.success("✅ Results ready below")
-
-                st.rerun()
+                    st.balloons()
+                    st.rerun()
 
         except Exception as e:
-            st.error(f"❌ Error: {str(e)}")
-            st.exception(e)
+            st.error(f"❌ Error processing files: {str(e)}")
+            with st.expander("🔍 View Error Details"):
+                st.exception(e)
 
     else:
-        st.info("👆 Please upload both Master and User files to begin")
+        st.markdown('<div class="info-box">👆 Please upload both Master and User files to begin processing</div>', unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
